@@ -1,0 +1,65 @@
+version: '3.7'
+
+services:
+
+  redis-ui:
+    image: patrikx3/p3x-redis-ui:latest
+    ports:
+      - 7843:7843
+    depends_on:
+      - redis-master
+    volumes:
+      - ./p3x-redis-ui-settings:/settings
+
+  redis-master:
+    image: redis:7.2.4
+    volumes:
+      - "./.data:/data"
+    ports:
+      - "6379:6379"
+
+  redis-slave1:
+    image: redis:7.2.4
+    command: redis-server --port 6380 --slaveof redis-master 6379
+    links:
+      - redis-master
+    ports:
+      - "6380:6379"
+    volumes:
+      - "./.data-slave:/data"
+
+  redis-slave2:
+    image: redis:7.2.4
+    command: redis-server --port 6381 --slaveof redis-master 6379
+    links:
+      - redis-master
+    ports:
+      - "6381:6379"
+    volumes:
+      - "./.data-slave:/data"
+
+  # Instance 1
+  redis-sentinel1:
+    build:
+      context: ./redis-sentinel
+    links:
+      - redis-master
+    ports:
+      - "26379:26379"
+
+  # Instance 2
+  redis-sentinel2:
+    build:
+      context: ./redis-sentinel
+    links:
+      - redis-master
+    ports:
+      - "26380:26379"
+  # Instance 3
+  redis-sentinel3:
+    build:
+      context: ./redis-sentinel
+    links:
+      - redis-master
+    ports:
+      - "26381:26379"
