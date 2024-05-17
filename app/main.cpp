@@ -17,16 +17,16 @@ int main() {
     connection_opts.connect_timeout = std::chrono::milliseconds(100);
     connection_opts.socket_timeout = std::chrono::milliseconds(100);
     sw::redis::ConnectionPoolOptions pool_options;
-    auto redis_master = std::make_shared<sw::redis::Redis>(redis_sentinel, "mymaster", sw::redis::Role::MASTER, connection_opts,
+    std::string name = "mymaster";
+    auto redis_master = std::make_shared<sw::redis::Redis>(redis_sentinel, name, sw::redis::Role::MASTER, connection_opts,
                                                            pool_options);
+    auto redis_slave = std::make_shared<sw::redis::Redis>(redis_sentinel, name, sw::redis::Role::SLAVE,
+                                                          connection_opts, pool_options);
 
     try {
-        // Set a key-value pair
         redis_master->set("key", "value");
 
-        // Get the value of a key
-        auto val = redis_master->get("key");
-        if (val) {
+        if (auto val = redis_slave->get("key"); val) {
             std::cout << "The value of 'key' is " << *val << std::endl;
         } else {
             std::cout << "'key' does not exist." << std::endl;
