@@ -1,72 +1,67 @@
-version: '3'
-
 services:
+
+  app:
+    build: app
+    depends_on:
+      - redis-sentinel-1
+      - redis-sentinel-2
+      - redis-sentinel-3
+    networks:
+      - redis-network
+
   redis-master:
-    image: redis:3
-    command: redis-server
+    image: redis:7.2.4
+    volumes:
+      - "./.data:/data"
+    networks:
+      - redis-network
 
   redis-slave-1:
-    image: redis:3
+    image: redis:7.2.4
     command: redis-server --slaveof redis-master 6379
-    links:
-      - redis-master
+    networks:
+      - redis-network
+    volumes:
+      - "./.data-slave-1:/data"
 
   redis-slave-2:
-    image: redis:3
+    image: redis:7.2.4
     command: redis-server --slaveof redis-master 6379
-    links:
-      - redis-master
-
-  sentinel-1:
-    build: sentinel
-    environment:
-      - SENTINEL_DOWN_AFTER=5000
-      - SENTINEL_FAILOVER=500
-      - SENTINEL_QUORUM=2
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    links:
-      - redis-master
-
-  sentinel-2:
-    build: sentinel
-    environment:
-      - SENTINEL_DOWN_AFTER=5000
-      - SENTINEL_FAILOVER=500
-      - SENTINEL_QUORUM=2
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    links:
-      - redis-master
-
-  sentinel-3:
-    build: sentinel
-    environment:
-      - SENTINEL_DOWN_AFTER=5000
-      - SENTINEL_FAILOVER=500
-      - SENTINEL_QUORUM=2
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    links:
-      - redis-master
-
-  redis_app:
-    build: app
-    environment:
-      - SENTINEL_DOWN_AFTER=5000
-      - SENTINEL_FAILOVER=500
-      - SENTINEL_QUORUM=2
-    depends_on:
-      - redis-master
-      - redis-slave-1
-      - redis-slave-2
-    links:
-      - redis-master
     volumes:
-      - ./app:/usr/src/app/redis_app/
+      - "./.data-slave-2:/data"
+    networks:
+      - redis-network
+
+  redis-sentinel-1:
+    build:
+      context: ./sentinel
+    depends_on:
+      - redis-master
+      - redis-slave-1
+      - redis-slave-2
+    networks:
+      - redis-network
+
+  redis-sentinel-2:
+    build:
+      context: ./sentinel
+    depends_on:
+      - redis-master
+      - redis-slave-1
+      - redis-slave-2
+    networks:
+      - redis-network
+
+  redis-sentinel-3:
+    build:
+      context: ./sentinel
+    depends_on:
+      - redis-master
+      - redis-slave-1
+      - redis-slave-2
+    networks:
+      - redis-network
+
+networks:
+  redis-network:
+    driver: bridge
