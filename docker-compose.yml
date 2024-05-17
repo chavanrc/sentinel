@@ -2,17 +2,17 @@ version: '3'
 
 services:
   redis-master:
-    image: redis:latest
+    image: redis:3
     command: redis-server
 
   redis-slave-1:
-    image: redis:latest
+    image: redis:3
     command: redis-server --slaveof redis-master 6379
     links:
       - redis-master
 
   redis-slave-2:
-    image: redis:latest
+    image: redis:3
     command: redis-server --slaveof redis-master 6379
     links:
       - redis-master
